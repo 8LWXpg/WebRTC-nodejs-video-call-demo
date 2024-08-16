@@ -1,5 +1,3 @@
-let localVideo;
-let remoteVideo;
 /** @type {RTCPeerConnection} */
 let yourConn;
 
@@ -17,14 +15,15 @@ serverConnection.onopen = () => {
 
 serverConnection.onmessage = gotMessageFromServer;
 
-document.getElementById('otherElements').hidden = true;
-const usernameInput = document.querySelector('#usernameInput');
-const usernameShow = document.querySelector('#showLocalUserName');
-const showAllUsers = document.querySelector('#allUsers');
-const loginBtn = document.querySelector('#loginBtn');
-const callToUsernameInput = document.querySelector('#callToUsernameInput');
-const callBtn = document.querySelector('#callBtn');
-const hangUpBtn = document.querySelector('#hangUpBtn');
+let remoteVideo = document.getElementById('remoteVideo');
+let localVideo = document.getElementById('localVideo');
+const usernameInput = document.getElementById('usernameInput');
+const usernameShow = document.getElementById('showLocalUserName');
+const showAllUsers = document.getElementById('allUsers');
+const loginBtn = document.getElementById('loginBtn');
+const callToUsernameInput = document.getElementById('callToUsernameInput');
+const callBtn = document.getElementById('callBtn');
+const hangUpBtn = document.getElementById('hangUpBtn');
 
 // Login when the user clicks the button
 loginBtn.addEventListener('click', () => {
@@ -46,23 +45,16 @@ function handleLogin(success, allUsers) {
 		const allAvailableUsers = allUsers.join(', ');
 		console.log('All available users', allAvailableUsers);
 		showAllUsers.innerHTML = 'Available users: ' + allAvailableUsers;
-		localVideo = document.getElementById('localVideo');
-		remoteVideo = document.getElementById('remoteVideo');
 		document.getElementById('myName').hidden = true;
 		document.getElementById('otherElements').hidden = false;
 
-		const constraints = {
-			video: true,
-			audio: true,
-		};
-
-		/* START:The camera stream acquisition */
-		if (navigator.mediaDevices.getUserMedia) {
-			navigator.mediaDevices.getUserMedia(constraints).then(getUserMediaSuccess).catch(errorHandler);
-		} else {
-			alert('Your browser does not support getUserMedia API');
-		}
-		/* END:The camera stream acquisition */
+		navigator.mediaDevices
+			.getUserMedia({
+				video: true,
+				audio: true,
+			})
+			.then(getUserMediaSuccess)
+			.catch(errorHandler);
 	}
 }
 /* END: Register user for first time i.e. Prepare ground for webrtc call to happen */

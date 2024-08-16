@@ -7,16 +7,15 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/8LWXpg/WebRTC-nodejs-video-call-demo"
   },
   "keywords": [
     "webrtc"
   ],
   "author": "8LWXpg",
   "license": "MIT",
-  "homepage": "",
+  "homepage": "https://github.com/8LWXpg/WebRTC-nodejs-video-call-demo",
   "dependencies": {
-    "express": "^4.19.2",
     "ws": "^8.18.0"
   }
 }

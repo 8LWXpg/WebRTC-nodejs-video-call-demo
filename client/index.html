@@ -19,13 +19,13 @@
 
 	<body>
 		<div id="myName">
-			<input type="text" id="usernameInput" onkeydown="handleKeyEvent(event)" placeholder="My name" />
-			<input type="button" id="loginBtn" onclick="handleLogin()" value="Save" />
+			<input type="text" id="usernameInput" placeholder="Username" />
+			<input type="submit" id="loginBtn" class="primary" />
 		</div>
 		<div>
 			<h3><span id="allUsers"></span></h3>
 		</div>
-		<div id="otherElements">
+		<div id="otherElements" hidden>
 			<div class="container">
 				<div class="row">
 					<div class="col-sm-12 col-md-6"><video id="localVideo" autoplay muted></video></div>
@@ -45,14 +45,14 @@
 			<div id="callInitiator">
 				<input id="callToUsernameInput" type="text" placeholder="username to call" />
 				<br />
-				<button id="callBtn">Call</button>
+				<button id="callBtn" class="primary">Call</button>
 			</div>
 			<div id="callReceiver" style="display: none">
-				<button id="answerBtn">Answer</button>
-				<button id="declineBtn">Decline</button>
+				<button id="answerBtn" class="primary">Answer</button>
+				<button id="declineBtn" class="secondary">Decline</button>
 			</div>
 			<div id="callOngoing" style="display: none">
-				<button id="hangUpBtn">Hang Up</button>
+				<button id="hangUpBtn" class="secondary">Hang Up</button>
 			</div>
 		</div>
 		<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
