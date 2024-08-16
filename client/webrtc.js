@@ -18,7 +18,8 @@ serverConnection.onmessage = gotMessageFromServer;
 const remoteVideo = document.getElementById('remoteVideo');
 const localVideo = document.getElementById('localVideo');
 const usernameInput = document.getElementById('usernameInput');
-const usernameShow = document.getElementById('showLocalUserName');
+const showUsername = document.getElementById('showLocalUserName');
+const showRemoteUsername = document.getElementById('showRemoteUserName');
 const showAllUsers = document.getElementById('allUsers');
 const loginBtn = document.getElementById('loginBtn');
 const callToUsernameInput = document.getElementById('callToUsernameInput');
@@ -31,7 +32,7 @@ const callReceiver = document.getElementById('callReceiver');
 // Login when the user clicks the button
 loginBtn.addEventListener('click', () => {
 	const name = usernameInput.value;
-	usernameShow.innerHTML = 'Hello, ' + name;
+	showUsername.innerHTML = name;
 	if (name.length > 0) {
 		send({
 			type: 'login',
@@ -40,12 +41,16 @@ loginBtn.addEventListener('click', () => {
 	}
 });
 
-/* START: Register user for first time i.e. Prepare ground for webrtc call to happen */
+/**
+ * Register user for first time i.e. Prepare ground for webrtc call to happen
+ * @param {boolean} success
+ * @param {Set} allUsers
+ */
 function handleLogin(success, allUsers) {
 	if (success === false) {
 		alert('Oops...try a different username');
 	} else {
-		const allAvailableUsers = allUsers.join(', ');
+		const allAvailableUsers = Array.from(allUsers).join(', ');
 		console.log('All available users', allAvailableUsers);
 		showAllUsers.innerHTML = 'Available users: ' + allAvailableUsers;
 		document.getElementById('myName').hidden = true;
@@ -60,7 +65,6 @@ function handleLogin(success, allUsers) {
 			.catch(errorHandler);
 	}
 }
-/* END: Register user for first time i.e. Prepare ground for webrtc call to happen */
 
 function getUserMediaSuccess(stream) {
 	const localStream = stream;
@@ -202,6 +206,7 @@ function handleOffer(offer, name) {
 
 function gotRemoteStream(event) {
 	console.log('got remote stream');
+	showRemoteUsername.innerHTML = connectedUser;
 	remoteVideo.srcObject = event.streams[0];
 }
 

@@ -7,7 +7,7 @@ const HTTPS_PORT = 8443;
 
 //all connected to the server users
 let users = {};
-let allUsers = [];
+let allUsers = new Set();
 // ----------------------------------------------------------------------------------------
 
 // Create a server for the client html page
@@ -65,9 +65,7 @@ wss.on('connection', (ws) => {
 				} else {
 					console.log('save user connection on the server');
 					users[data.name] = ws;
-					allUsers.indexOf(data.name) === -1
-						? allUsers.push(data.name)
-						: console.log('This item already exists');
+					allUsers.add(data.name);
 
 					//console.log('all available users',JSON.stringify(users))
 					ws.name = data.name;
@@ -129,7 +127,6 @@ wss.on('connection', (ws) => {
 			case 'leave': {
 				console.log('Disconnecting from', data.name);
 				const conn = users[data.name];
-				conn.otherName = null;
 
 				//notify the other user so he can disconnect his peer connection
 				if (conn != null) {
@@ -155,8 +152,7 @@ wss.on('connection', (ws) => {
 
 			if (ws.otherName) {
 				console.log('Disconnecting from ', ws.otherName);
-				let conn = users[ws.otherName];
-				conn.otherName = null;
+				const conn = users[ws.otherName];
 
 				if (conn != null) {
 					sendTo(conn, {
