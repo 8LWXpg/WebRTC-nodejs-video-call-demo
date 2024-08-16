@@ -75,7 +75,7 @@ function getUserMediaSuccess(stream) {
 	const connectionState = yourConn.connectionState;
 	console.log('connection state inside getusermedia', connectionState);
 
-	yourConn.onicecandidate = function (event) {
+	yourConn.onicecandidate = (event) => {
 		console.log('onicecandidate inside getusermedia success', event.candidate);
 		if (event.candidate) {
 			send({
@@ -89,7 +89,7 @@ function getUserMediaSuccess(stream) {
 }
 
 /* START: Initiate call to any user i.e. send message to server */
-callBtn.addEventListener('click', function () {
+callBtn.addEventListener('click', () => {
 	console.log('inside call button');
 
 	const callToUsername = document.getElementById('callToUsernameInput').value;
@@ -174,7 +174,7 @@ function handleOffer(offer, name) {
 	document.getElementById('callReceiver').style.display = 'block';
 
 	/* Call answer functionality starts */
-	answerBtn.addEventListener('click', function () {
+	answerBtn.addEventListener('click', () => {
 		connectedUser = name;
 		yourConn.setRemoteDescription(new RTCSessionDescription(offer));
 
@@ -197,7 +197,7 @@ function handleOffer(offer, name) {
 	});
 	/* Call answer functionality ends */
 	/* Call decline functionality starts */
-	declineBtn.addEventListener('click', function () {
+	declineBtn.addEventListener('click', () => {
 		document.getElementById('callInitiator').style.display = 'block';
 		document.getElementById('callReceiver').style.display = 'none';
 	});
@@ -226,7 +226,7 @@ function handleCandidate(candidate) {
 }
 
 //hang up
-hangUpBtn.addEventListener('click', function () {
+hangUpBtn.addEventListener('click', () => {
 	send({
 		type: 'leave',
 	});
