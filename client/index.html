@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>WebRTC Video Chat</title>
+	<head>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css" />
+		<style>
+			body {
+				margin: 20pt;
+			}
+
+			video {
+				max-width: 100%;
+				height: auto;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="myName">
+			<input type="text" id="usernameInput" onkeydown="handleKeyEvent(event)" placeholder="My name" />
+			<input type="button" id="loginBtn" onclick="handleLogin()" value="Save" />
+		</div>
+		<div>
+			<h3><span id="allUsers"></span></h3>
+		</div>
+		<div id="otherElements">
+			<div class="container">
+				<div class="row">
+					<div class="col-sm-12 col-md-6"><video id="localVideo" autoplay muted></video></div>
+					<div class="col-sm-12 col-md-6"><video id="remoteVideo" autoplay></video></div>
+				</div>
+				<div class="row">
+					<div class="col-sm-12 col-md-6">
+						<b><span id="showLocalUserName"></span></b>
+					</div>
+					<div class="col-sm-12 col-md-6">
+						<b><span id="showRemoteUserName"></span></b>
+					</div>
+				</div>
+			</div>
+
+			<br />
+			<div id="callInitiator">
+				<input id="callToUsernameInput" type="text" placeholder="username to call" />
+				<br />
+				<button id="callBtn">Call</button>
+			</div>
+			<div id="callReceiver" style="display: none">
+				<button id="answerBtn">Answer</button>
+				<button id="declineBtn">Decline</button>
+			</div>
+			<div id="callOngoing" style="display: none">
+				<button id="hangUpBtn">Hang Up</button>
+			</div>
+		</div>
+		<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+		<script src="webrtc.js"></script>
+	</body>
+</html>

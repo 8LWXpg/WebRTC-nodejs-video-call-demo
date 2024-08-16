@@ -1,0 +1,22 @@
+{
+  "name": "webrtc-signalling-server",
+  "version": "1.0.0",
+  "description": "An as simple as it gets WebRTC example with signalling server",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "webrtc"
+  ],
+  "author": "8LWXpg",
+  "license": "MIT",
+  "homepage": "",
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  }
+}
