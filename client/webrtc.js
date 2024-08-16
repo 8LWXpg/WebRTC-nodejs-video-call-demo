@@ -11,7 +11,7 @@ const peerConnectionConfig = {
 
 let serverConnection = new WebSocket('wss://' + window.location.hostname + ':8443');
 
-serverConnection.onopen = function () {
+serverConnection.onopen = () => {
 	console.log('Connected to the signaling server');
 };
 
@@ -21,7 +21,6 @@ document.getElementById('otherElements').hidden = true;
 const usernameInput = document.querySelector('#usernameInput');
 const usernameShow = document.querySelector('#showLocalUserName');
 const showAllUsers = document.querySelector('#allUsers');
-const remoteUsernameShow = document.querySelector('#showRemoteUserName');
 const loginBtn = document.querySelector('#loginBtn');
 const callToUsernameInput = document.querySelector('#callToUsernameInput');
 const callBtn = document.querySelector('#callBtn');

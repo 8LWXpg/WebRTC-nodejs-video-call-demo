@@ -38,8 +38,8 @@ httpsServer.listen(HTTPS_PORT, '0.0.0.0');
 // Create a server for handling websocket calls
 const wss = new WebSocketServer({ server: httpsServer });
 
-wss.on('connection', function (ws) {
-	ws.on('message', function (message) {
+wss.on('connection', (ws) => {
+	ws.on('message', (message) => {
 		let data;
 
 		//accepting only JSON messages
@@ -149,7 +149,7 @@ wss.on('connection', function (ws) {
 		//wss.broadcast(message);
 	});
 
-	ws.on('close', function () {
+	ws.on('close', () => {
 		if (ws.name) {
 			delete users[ws.name];
 
