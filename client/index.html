@@ -20,7 +20,7 @@
 	<body>
 		<div id="myName">
 			<input type="text" id="usernameInput" placeholder="Username" />
-			<input type="submit" id="loginBtn" class="primary" />
+			<input type="submit" onclick="loginClick()" class="primary" />
 		</div>
 		<div>
 			<h3><span id="allUsers"></span></h3>
@@ -45,7 +45,7 @@
 			<div id="callInitiator">
 				<input id="callToUsernameInput" type="text" placeholder="username to call" />
 				<br />
-				<button id="callBtn" class="primary">Call</button>
+				<button onclick="callBtnClick()" class="primary">Call</button>
 			</div>
 			<div id="callReceiver" style="display: none">
 				<button id="answerBtn" class="primary">Answer</button>

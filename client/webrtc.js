@@ -21,16 +21,13 @@ const usernameInput = document.getElementById('usernameInput');
 const showUsername = document.getElementById('showLocalUserName');
 const showRemoteUsername = document.getElementById('showRemoteUserName');
 const showAllUsers = document.getElementById('allUsers');
-const loginBtn = document.getElementById('loginBtn');
 const callToUsernameInput = document.getElementById('callToUsernameInput');
-const callBtn = document.getElementById('callBtn');
 const hangUpBtn = document.getElementById('hangUpBtn');
 const callOngoing = document.getElementById('callOngoing');
 const callInitiator = document.getElementById('callInitiator');
 const callReceiver = document.getElementById('callReceiver');
 
-// Login when the user clicks the button
-loginBtn.addEventListener('click', () => {
+function loginClick() {
 	const name = usernameInput.value;
 	showUsername.innerHTML = name;
 	if (name.length > 0) {
@@ -39,7 +36,7 @@ loginBtn.addEventListener('click', () => {
 			name: name,
 		});
 	}
-});
+}
 
 /**
  * Register user for first time i.e. Prepare ground for webrtc call to happen
@@ -87,8 +84,10 @@ function getUserMediaSuccess(stream) {
 	yourConn.addStream(localStream);
 }
 
-/* START: Initiate call to any user i.e. send message to server */
-callBtn.addEventListener('click', () => {
+/**
+ * Initiate call to any user i.e. send message to server
+ */
+function callBtnClick() {
 	console.log('inside call button');
 
 	const callToUsername = callToUsernameInput.value;
@@ -120,8 +119,7 @@ callBtn.addEventListener('click', () => {
 		callOngoing.style.display = 'block';
 		callInitiator.style.display = 'none';
 	} else alert("username can't be blank!");
-});
-/* END: Initiate call to any user i.e. send message to server */
+}
 
 /* START: Recieved call from server i.e. recieve messages from server  */
 function gotMessageFromServer(message) {

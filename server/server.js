@@ -8,7 +8,6 @@ const HTTPS_PORT = 8443;
 //all connected to the server users
 let users = {};
 let allUsers = new Set();
-// ----------------------------------------------------------------------------------------
 
 // Create a server for the client html page
 function handleRequest(request, response) {
@@ -143,7 +142,6 @@ wss.on('connection', (ws) => {
 				});
 			}
 		}
-		//wss.broadcast(message);
 	});
 
 	ws.on('close', () => {
@@ -162,8 +160,6 @@ wss.on('connection', (ws) => {
 			}
 		}
 	});
-
-	//ws.send("Hello world");
 });
 
 function sendTo(connection, message) {
