@@ -15,6 +15,7 @@ serverConnection.onopen = () => {
 
 serverConnection.onmessage = gotMessageFromServer;
 
+/** @type {HTMLVideoElement} */
 const remoteVideo = document.getElementById('remoteVideo');
 const localVideo = document.getElementById('localVideo');
 const usernameInput = document.getElementById('usernameInput');
@@ -22,7 +23,6 @@ const showUsername = document.getElementById('showLocalUserName');
 const showRemoteUsername = document.getElementById('showRemoteUserName');
 const showAllUsers = document.getElementById('allUsers');
 const callToUsernameInput = document.getElementById('callToUsernameInput');
-const hangUpBtn = document.getElementById('hangUpBtn');
 const callOngoing = document.getElementById('callOngoing');
 const callInitiator = document.getElementById('callInitiator');
 const callReceiver = document.getElementById('callReceiver');
@@ -125,20 +125,20 @@ function callBtnClick() {
 		console.log('signalling state after', signallingState2);
 		yourConn
 			.createOffer()
-			.then((offer) => {
+			.then(async (offer) => {
 				send({
 					type: 'offer',
 					offer: offer,
 				});
 
-				return yourConn.setLocalDescription(offer);
+				await yourConn.setLocalDescription(offer);
+				callOngoing.style.display = 'block';
+				callInitiator.style.display = 'none';
 			})
 			.catch((error) => {
 				alert('Error when creating an offer', error);
 				console.log('Error when creating an offer', error);
 			});
-		callOngoing.style.display = 'block';
-		callInitiator.style.display = 'none';
 	} else alert("username can't be blank!");
 }
 
@@ -245,7 +245,7 @@ function handleCandidate(candidate) {
 }
 
 //hang up
-hangUpBtn.addEventListener('click', () => {
+function hangUp() {
 	send({
 		type: 'leave',
 	});
@@ -254,18 +254,19 @@ hangUpBtn.addEventListener('click', () => {
 
 	callOngoing.style.display = 'none';
 	callInitiator.style.display = 'block';
-});
+}
 
 function handleLeave() {
 	connectedUser = null;
 	remoteVideo.src = null;
+	remoteVideo.hidden = true;
+	showRemoteUsername.innerHTML = '';
 	const connectionState = yourConn.connectionState;
 	const signallingState = yourConn.signalingState;
 	console.log('connection state before', connectionState);
 	console.log('signalling state before', signallingState);
 	yourConn.close();
 	yourConn.onicecandidate = null;
-	yourConn.onaddstream = null;
 	const connectionState1 = yourConn.connectionState;
 	const signallingState1 = yourConn.signalingState;
 	console.log('connection state after', connectionState1);
