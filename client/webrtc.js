@@ -200,18 +200,18 @@ function handleOffer(offer, name) {
 		yourConn
 			.createAnswer()
 			.then(async (answer) => {
-				return yourConn.setLocalDescription(answer).then(() => {
+				await yourConn.setLocalDescription(answer).then(() => {
 					send({
 						type: 'answer',
 						answer: answer,
 					});
 				});
+				callReceiver.style.display = 'none';
+				callOngoing.style.display = 'block';
 			})
 			.catch((error) => {
 				alert('Error when creating an answer: ' + error);
 			});
-		callReceiver.style.display = 'none';
-		callOngoing.style.display = 'block';
 	});
 	/* Call answer functionality ends */
 	/* Call decline functionality starts */
