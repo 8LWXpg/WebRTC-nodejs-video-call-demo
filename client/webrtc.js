@@ -27,13 +27,26 @@ const callOngoing = document.getElementById('callOngoing');
 const callInitiator = document.getElementById('callInitiator');
 const callReceiver = document.getElementById('callReceiver');
 
-function loginClick() {
+/**
+ * @param {HTMLInputElement} self
+ */
+function loginClick(self) {
+	self.outerHTML = /* html */ `
+		<button class="primary" onclick="share('m')">Share Media</button>
+		<button class="primary" onclick="share('s')">Share Screen</button>`;
+}
+
+/**
+ * @param {'m'|'s'} mediaType
+ */
+function share(mediaType) {
 	const name = usernameInput.value;
 	showUsername.innerHTML = name;
 	if (name.length > 0) {
 		send({
 			type: 'login',
 			name: name,
+			share: mediaType,
 		});
 	}
 }
@@ -41,25 +54,33 @@ function loginClick() {
 /**
  * Register user for first time i.e. Prepare ground for webrtc call to happen
  * @param {boolean} success
- * @param {Set} allUsers
+ * @param {Array[string]} allUsers
+ * @param {'m'|'s'} share
  */
-function handleLogin(success, allUsers) {
+function handleLogin(success, allUsers, share) {
 	if (success === false) {
 		alert('Oops...try a different username');
 	} else {
-		const allAvailableUsers = Array.from(allUsers).join(', ');
+		const allAvailableUsers = allUsers.join(', ');
 		console.log('All available users', allAvailableUsers);
 		showAllUsers.innerHTML = 'Available users: ' + allAvailableUsers;
 		document.getElementById('myName').hidden = true;
 		document.getElementById('otherElements').hidden = false;
 
-		navigator.mediaDevices
-			.getUserMedia({
-				video: true,
-				audio: true,
-			})
-			.then(getUserMediaSuccess)
-			.catch(errorHandler);
+		switch (share) {
+			case 'm':
+				navigator.mediaDevices
+					.getUserMedia({
+						video: true,
+						audio: true,
+					})
+					.then(getUserMediaSuccess)
+					.catch(errorHandler);
+				break;
+			case 's':
+				navigator.mediaDevices.getDisplayMedia().then(getUserMediaSuccess).catch(errorHandler);
+				break;
+		}
 	}
 }
 
@@ -128,7 +149,7 @@ function gotMessageFromServer(message) {
 
 	switch (data.type) {
 		case 'login':
-			handleLogin(data.success, data.allUsers);
+			handleLogin(data.success, data.allUsers, data.share);
 			break;
 		//when somebody wants to call us
 		case 'offer':
@@ -175,20 +196,20 @@ function handleOffer(offer, name) {
 		connectedUser = name;
 		yourConn.setRemoteDescription(new RTCSessionDescription(offer));
 
-		//create an answer to an offer
-		yourConn.createAnswer(
-			function (answer) {
-				yourConn.setLocalDescription(answer);
-
-				send({
-					type: 'answer',
-					answer: answer,
+		// Create an answer to an offer
+		yourConn
+			.createAnswer()
+			.then(async (answer) => {
+				return yourConn.setLocalDescription(answer).then(() => {
+					send({
+						type: 'answer',
+						answer: answer,
+					});
 				});
-			},
-			function (error) {
-				alert('Error when creating an answer');
-			}
-		);
+			})
+			.catch((error) => {
+				alert('Error when creating an answer: ' + error);
+			});
 		callReceiver.style.display = 'none';
 		callOngoing.style.display = 'block';
 	});
