@@ -18,7 +18,7 @@ Generate a self-signed certificate and key using the following command:
 or on Windows:
 
 ```pwsh
-powershell generate_cert.ps1
+generate_cert.bat
 ```
 
 Then start the server:
