@@ -108,7 +108,7 @@ wss.on('connection', (ws) => {
 
 				const conn = users[data.name];
 
-				if (conn != null) {
+				if (conn !== undefined) {
 					//setting that UserA connected with UserB
 					ws.otherName = data.name;
 
@@ -131,7 +131,7 @@ wss.on('connection', (ws) => {
 				const conn = users[data.name];
 				console.log('answer: ', data.answer);
 
-				if (conn != null) {
+				if (conn !== undefined) {
 					ws.otherName = data.name;
 					sendTo(conn, {
 						type: 'answer',
@@ -154,7 +154,7 @@ wss.on('connection', (ws) => {
 				console.log('Sending candidate to:', data.name);
 				const conn = users[data.name];
 
-				if (conn != null) {
+				if (conn !== undefined) {
 					sendTo(conn, {
 						type: 'candidate',
 						candidate: data.candidate,
@@ -168,9 +168,20 @@ wss.on('connection', (ws) => {
 				allUsers.delete(data.name);
 
 				// Notify the other user so he can disconnect his peer connection
-				if (conn != null) {
+				if (conn !== undefined) {
 					sendTo(conn, {
 						type: 'leave',
+					});
+				}
+				break;
+			}
+			case 'hangup': {
+				console.log('Hanging up call from', data.name);
+				const conn = users[users[data.name]?.otherName];
+
+				if (conn !== undefined) {
+					sendTo(conn, {
+						type: 'hangup',
 					});
 				}
 				break;
@@ -192,7 +203,7 @@ wss.on('connection', (ws) => {
 				console.log('Disconnecting from ', ws.otherName);
 				const conn = users[ws.otherName];
 
-				if (conn != null) {
+				if (conn !== undefined) {
 					sendTo(conn, {
 						type: 'leave',
 					});

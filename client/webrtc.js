@@ -73,11 +73,14 @@ function callBtnClick() {
 
 function hangUpClick() {
 	send({
-		type: 'leave',
+		type: 'hangup',
 		name: localUser,
 	});
 
-	handleLeave();
+	connectedUser = null;
+	remoteVideo.src = null;
+	remoteVideo.hidden = true;
+	showRemoteUsername.innerHTML = '';
 
 	callOngoing.style.display = 'none';
 	callInitiator.style.display = 'block';
@@ -91,14 +94,84 @@ window.addEventListener('beforeunload', () => {
 });
 // #endregion
 
-/** Handle peer leaves */
-function handleLeave() {
-	connectedUser = null;
-	remoteVideo.src = null;
-	remoteVideo.hidden = true;
-	showRemoteUsername.innerHTML = '';
-	yourConn.close();
-	yourConn.onicecandidate = null;
+/**
+ * Handle messages received from server
+ * @param {*} message
+ */
+function gotMessageFromServer(message) {
+	console.log('Got message', message.data);
+	const data = JSON.parse(message.data);
+
+	switch (data.type) {
+		case 'login':
+			handleLogin(data.success, data.allUsers, data.share);
+			break;
+		//when somebody wants to call us
+		case 'offer':
+			handleOffer(data.offer, data.name);
+			break;
+		case 'answer':
+			handleAnswer(data.answer);
+			break;
+		case 'decline':
+			handleDecline();
+			break;
+		//when a remote peer sends an ice candidate to us
+		case 'candidate':
+			handleCandidate(data.candidate);
+			break;
+		case 'leave':
+			handleLeave();
+			break;
+		case 'hangup':
+			handelHangUp();
+			break;
+		case 'error':
+			alert(data.message);
+			break;
+		default:
+			break;
+	}
+
+	serverConnection.onerror = errorHandler;
+}
+
+// #region utility functions
+function getUserMediaSuccess(stream) {
+	localVideo.srcObject = stream;
+	yourConn = new RTCPeerConnection(peerConnectionConfig);
+
+	console.log('connection state inside getusermedia', yourConn.connectionState);
+
+	setupConnection(stream);
+}
+
+function setupConnection(stream) {
+	yourConn.onicecandidate = (event) => {
+		console.log('onicecandidate: ', event.candidate);
+		if (event.candidate) {
+			send({
+				type: 'candidate',
+				name: connectedUser,
+				candidate: event.candidate,
+			});
+		}
+	};
+	yourConn.ontrack = (event) => {
+		console.log('got remote stream');
+		showRemoteUsername.innerHTML = connectedUser;
+		remoteVideo.srcObject = event.streams[0];
+	};
+	yourConn.addStream(stream);
+}
+
+function errorHandler(error) {
+	console.error(error);
+}
+
+function send(msg) {
+	console.log('sending:\n', msg);
+	serverConnection.send(JSON.stringify(msg));
 }
 
 /**
@@ -115,6 +188,7 @@ function share(mediaType) {
 		});
 	}
 }
+// #endregion
 
 /**
  * Register user for first time i.e. Prepare ground for WebRTC call to happen
@@ -147,88 +221,6 @@ function handleLogin(success, allUsers, share) {
 				break;
 		}
 	}
-}
-
-function getUserMediaSuccess(stream) {
-	const localStream = stream;
-	localVideo.srcObject = stream;
-	yourConn = new RTCPeerConnection(peerConnectionConfig);
-
-	const connectionState = yourConn.connectionState;
-	console.log('connection state inside getusermedia', connectionState);
-
-	yourConn.onicecandidate = (event) => {
-		console.log('onicecandidate inside getusermedia success', event.candidate);
-		if (event.candidate) {
-			send({
-				type: 'candidate',
-				name: connectedUser,
-				candidate: event.candidate,
-			});
-		}
-	};
-	yourConn.ontrack = (event) => {
-		console.log('got remote stream');
-		showRemoteUsername.innerHTML = connectedUser;
-		remoteVideo.srcObject = event.streams[0];
-	};
-	yourConn.addStream(localStream);
-}
-
-/**
- * Handle messages received from server
- * @param {*} message
- */
-function gotMessageFromServer(message) {
-	console.log('Got message', message.data);
-	const data = JSON.parse(message.data);
-
-	switch (data.type) {
-		case 'login':
-			handleLogin(data.success, data.allUsers, data.share);
-			break;
-		//when somebody wants to call us
-		case 'offer':
-			handleOffer(data.offer, data.name);
-			break;
-		case 'answer':
-			handleAnswer(data.answer);
-			break;
-		case 'decline':
-			handleDecline();
-			break;
-		//when a remote peer sends an ice candidate to us
-		case 'candidate':
-			handleCandidate(data.candidate);
-			break;
-		case 'leave':
-			handleLeave();
-			break;
-		case 'error':
-			alert(data.message);
-			break;
-		default:
-			break;
-	}
-
-	serverConnection.onerror = function (err) {
-		console.log('Got error', err);
-	};
-}
-
-function send(msg) {
-	console.log('sending:\n', msg);
-	serverConnection.send(JSON.stringify(msg));
-}
-
-function gotRemoteStream(event) {
-	console.log('got remote stream');
-	showRemoteUsername.innerHTML = connectedUser;
-	remoteVideo.srcObject = event.streams[0];
-}
-
-function errorHandler(error) {
-	console.error(error);
 }
 
 // create an answer for an offer
@@ -313,4 +305,21 @@ function handleCandidate(candidate) {
 	} else {
 		candidateQueue.push(candidate);
 	}
+}
+
+/** Handle peer leaves */
+function handleLeave() {
+	handelHangUp();
+	yourConn.close();
+}
+
+function handelHangUp() {
+	connectedUser = null;
+	remoteVideo.src = null;
+	remoteVideo.hidden = true;
+	showRemoteUsername.innerHTML = '';
+
+	callOngoing.style.display = 'none';
+	callInitiator.style.display = 'block';
+	yourConn.onicecandidate = null;
 }
