@@ -6,9 +6,11 @@ const WebSocketServer = WebSocket.Server;
 
 const HTTPS_PORT = 8443;
 
-/** (username) -> (WebSocket) */
-let users = {};
-let allUsers = new Set();
+/**
+ * @type {Map<string, WebSocket>}
+ */
+const users = new Map();
+const allUsers = new Set();
 
 // Serve web page based on file path, without using Express
 function handleRequest(request, response) {
@@ -62,6 +64,7 @@ const wss = new WebSocketServer({ server: httpsServer });
 
 wss.on('connection', (ws) => {
 	ws.on('message', (message) => {
+		/** @type {{name :string}} */
 		let data;
 
 		//accepting only JSON messages
@@ -78,7 +81,6 @@ wss.on('connection', (ws) => {
 			//when a user tries to login
 			case 'login': {
 				console.log('User logged', data.name);
-				console.log('if anyone is logged in with this username then refuse');
 				if (users[data.name]) {
 					sendTo(ws, {
 						type: 'login',
@@ -101,10 +103,9 @@ wss.on('connection', (ws) => {
 				break;
 			}
 			case 'offer': {
-				//for ex. UserA wants to call UserB
+				// Calling different user
 				console.log('Sending offer to: ', data.name);
 
-				//if UserB exists then send him offer details
 				const conn = users[data.name];
 
 				if (conn != null) {
@@ -116,12 +117,17 @@ wss.on('connection', (ws) => {
 						offer: data.offer,
 						name: ws.name,
 					});
+				} else {
+					sendTo(ws, {
+						type: 'error',
+						message: 'User not found',
+					});
 				}
 				break;
 			}
 			case 'answer': {
+				// Answering to the offer
 				console.log('Sending answer to: ', data.name);
-				//for ex. UserB answers UserA
 				const conn = users[data.name];
 				console.log('answer: ', data.answer);
 
@@ -132,6 +138,16 @@ wss.on('connection', (ws) => {
 						answer: data.answer,
 					});
 				}
+				break;
+			}
+			case 'decline': {
+				// Declining the offer
+				console.log('Declining call from: ', data.name);
+				const conn = users[data.name];
+				sendTo(conn, {
+					type: 'decline',
+					name: ws.name,
+				});
 				break;
 			}
 			case 'candidate': {
@@ -151,7 +167,7 @@ wss.on('connection', (ws) => {
 				const conn = users[data.name];
 				allUsers.delete(data.name);
 
-				//notify the other user so he can disconnect his peer connection
+				// Notify the other user so he can disconnect his peer connection
 				if (conn != null) {
 					sendTo(conn, {
 						type: 'leave',
@@ -186,6 +202,11 @@ wss.on('connection', (ws) => {
 	});
 });
 
+/**
+ * Send data to a websocket connection
+ * @param {WebSocket} connection
+ * @param {object} message
+ */
 function sendTo(connection, message) {
 	connection.send(JSON.stringify(message));
 }

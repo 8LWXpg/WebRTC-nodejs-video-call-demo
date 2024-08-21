@@ -29,6 +29,7 @@ const callOngoing = document.getElementById('callOngoing');
 const callInitiator = document.getElementById('callInitiator');
 const callReceiver = document.getElementById('callReceiver');
 
+// #region page elements
 /**
  * @param {HTMLInputElement} self
  */
@@ -36,6 +37,68 @@ function loginClick(self) {
 	self.outerHTML = /* html */ `
 		<button class="primary" onclick="share('m')">Share Media</button>
 		<button class="primary" onclick="share('s')">Share Screen</button>`;
+}
+
+/**
+ * Initiate call to any user i.e. send message to server
+ */
+function callBtnClick() {
+	const callToUsername = callToUsernameInput.value;
+
+	if (callToUsername.length > 0) {
+		connectedUser = callToUsername;
+		console.log('create an offer to ', callToUsername);
+		console.log('connection state', yourConn.connectionState);
+		console.log('signalling state', yourConn.signalingState);
+		yourConn
+			.createOffer()
+			.then((offer) => {
+				yourConn.setLocalDescription(offer).then(
+					send({
+						type: 'offer',
+						name: connectedUser,
+						offer: offer,
+					})
+				);
+
+				callOngoing.style.display = 'block';
+				callInitiator.style.display = 'none';
+			})
+			.catch((error) => {
+				alert('Error when creating an offer', error);
+				console.error('Error when creating an offer', error);
+			});
+	} else alert("username can't be blank!");
+}
+
+function hangUpClick() {
+	send({
+		type: 'leave',
+		name: localUser,
+	});
+
+	handleLeave();
+
+	callOngoing.style.display = 'none';
+	callInitiator.style.display = 'block';
+}
+
+window.addEventListener('beforeunload', () => {
+	send({
+		type: 'leave',
+		name: localUser,
+	});
+});
+// #endregion
+
+/** Handle peer leaves */
+function handleLeave() {
+	connectedUser = null;
+	remoteVideo.src = null;
+	remoteVideo.hidden = true;
+	showRemoteUsername.innerHTML = '';
+	yourConn.close();
+	yourConn.onicecandidate = null;
 }
 
 /**
@@ -54,7 +117,7 @@ function share(mediaType) {
 }
 
 /**
- * Register user for first time i.e. Prepare ground for webrtc call to happen
+ * Register user for first time i.e. Prepare ground for WebRTC call to happen
  * @param {boolean} success
  * @param {Array[string]} allUsers
  * @param {'m'|'s'} share
@@ -113,39 +176,9 @@ function getUserMediaSuccess(stream) {
 }
 
 /**
- * Initiate call to any user i.e. send message to server
+ * Handle messages received from server
+ * @param {*} message
  */
-function callBtnClick() {
-	console.log('inside call button');
-
-	const callToUsername = callToUsernameInput.value;
-
-	if (callToUsername.length > 0) {
-		connectedUser = callToUsername;
-		console.log('create an offer to ', callToUsername);
-		console.log('connection state', yourConn.connectionState);
-		console.log('signalling state', yourConn.signalingState);
-		yourConn
-			.createOffer()
-			.then(async (offer) => {
-				send({
-					type: 'offer',
-					name: connectedUser,
-					offer: offer,
-				});
-
-				await yourConn.setLocalDescription(offer);
-				callOngoing.style.display = 'block';
-				callInitiator.style.display = 'none';
-			})
-			.catch((error) => {
-				alert('Error when creating an offer', error);
-				console.log('Error when creating an offer', error);
-			});
-	} else alert("username can't be blank!");
-}
-
-/* START: Recieved call from server i.e. recieve messages from server  */
 function gotMessageFromServer(message) {
 	console.log('Got message', message.data);
 	const data = JSON.parse(message.data);
@@ -156,20 +189,23 @@ function gotMessageFromServer(message) {
 			break;
 		//when somebody wants to call us
 		case 'offer':
-			console.log('inside offer');
 			handleOffer(data.offer, data.name);
 			break;
 		case 'answer':
-			console.log('inside answer');
 			handleAnswer(data.answer);
+			break;
+		case 'decline':
+			handleDecline();
 			break;
 		//when a remote peer sends an ice candidate to us
 		case 'candidate':
-			console.log('inside handle candidate');
 			handleCandidate(data.candidate);
 			break;
 		case 'leave':
 			handleLeave();
+			break;
+		case 'error':
+			alert(data.message);
 			break;
 		default:
 			break;
@@ -181,7 +217,7 @@ function gotMessageFromServer(message) {
 }
 
 function send(msg) {
-	console.log('msg sended to server:\n', msg);
+	console.log('sending:\n', msg);
 	serverConnection.send(JSON.stringify(msg));
 }
 
@@ -220,8 +256,8 @@ function handleOffer(offer, name) {
 		// Create an answer to an offer
 		yourConn
 			.createAnswer()
-			.then(async (answer) => {
-				await yourConn.setLocalDescription(answer).then(() => {
+			.then((answer) => {
+				yourConn.setLocalDescription(answer).then(() => {
 					send({
 						type: 'answer',
 						name: connectedUser,
@@ -239,6 +275,10 @@ function handleOffer(offer, name) {
 	function handleDeclineClick() {
 		callInitiator.style.display = 'block';
 		callReceiver.style.display = 'none';
+		send({
+			type: 'decline',
+			name: name,
+		});
 	}
 
 	// Add new event listeners
@@ -246,7 +286,7 @@ function handleOffer(offer, name) {
 	declineBtn.addEventListener('click', handleDeclineClick);
 }
 
-//when we got an answer from a remote user
+// When got an answer from a remote user
 function handleAnswer(answer) {
 	console.log('answer: ', answer);
 	yourConn
@@ -260,6 +300,12 @@ function handleAnswer(answer) {
 		.catch(errorHandler);
 }
 
+function handleDecline() {
+	callInitiator.style.display = 'block';
+	callReceiver.style.display = 'none';
+	callOngoing.style.display = 'none';
+}
+
 //when we got an ice candidate from a remote user
 function handleCandidate(candidate) {
 	if (yourConn.remoteDescription) {
@@ -267,30 +313,4 @@ function handleCandidate(candidate) {
 	} else {
 		candidateQueue.push(candidate);
 	}
-}
-
-//hang up
-function hangUp() {
-	send({
-		type: 'leave',
-		name: localUser,
-	});
-
-	handleLeave();
-
-	callOngoing.style.display = 'none';
-	callInitiator.style.display = 'block';
-}
-
-function handleLeave() {
-	connectedUser = null;
-	remoteVideo.src = null;
-	remoteVideo.hidden = true;
-	showRemoteUsername.innerHTML = '';
-	console.log('connection state before', yourConn.connectionState);
-	console.log('signalling state before', yourConn.signalingState);
-	yourConn.close();
-	yourConn.onicecandidate = null;
-	console.log('connection state after', yourConn.connectionState);
-	console.log('signalling state after', yourConn.signalingState);
 }
