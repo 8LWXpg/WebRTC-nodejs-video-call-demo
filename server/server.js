@@ -6,11 +6,11 @@ const WebSocketServer = WebSocket.Server;
 
 const HTTPS_PORT = 8443;
 
-//all connected to the server users
+/** (username) -> (WebSocket) */
 let users = {};
 let allUsers = new Set();
 
-// Create a server for the client html page
+// Serve web page based on file path, without using Express
 function handleRequest(request, response) {
 	// Render the single client html file for any request the HTTP server receives
 	console.log('request received: ' + request.url);
@@ -24,12 +24,6 @@ function handleRequest(request, response) {
 			break;
 		case '.css':
 			contentType = 'text/css';
-			break;
-		case '.png':
-			contentType = 'image/png';
-			break;
-		case '.jpg':
-			contentType = 'image/jpg';
 			break;
 	}
 
@@ -95,7 +89,6 @@ wss.on('connection', (ws) => {
 					users[data.name] = ws;
 					allUsers.add(data.name);
 
-					// console.log('all available users', allUsers, users);
 					ws.name = data.name;
 
 					sendTo(ws, {
@@ -156,6 +149,7 @@ wss.on('connection', (ws) => {
 			case 'leave': {
 				console.log('Disconnecting from', data.name);
 				const conn = users[data.name];
+				allUsers.delete(data.name);
 
 				//notify the other user so he can disconnect his peer connection
 				if (conn != null) {
@@ -196,12 +190,9 @@ function sendTo(connection, message) {
 	connection.send(JSON.stringify(message));
 }
 
-console.log(
-	'Server running. Visit https://localhost:' +
-		HTTPS_PORT +
-		" in Firefox/Chrome.\n\n\
-Some important notes:\n\
-  * Note the HTTPS; there is no HTTP -> HTTPS redirect.\n\
-  * You'll also need to accept the invalid TLS certificate.\n\
-  * Some browsers or OSs may not allow the webcam to be used by multiple pages at once. You may need to use two different browsers or machines.\n"
-);
+console.log(`Server running. Visit https://localhost:${HTTPS_PORT}
+
+Some important notes:
+* Note the HTTPS; there is no HTTP -> HTTPS redirect.
+* You'll also need to accept the invalid TLS certificate.
+* Some browsers or OSs may not allow the webcam to be used by multiple pages at once. You may need to use two different browsers or machines.\n`);

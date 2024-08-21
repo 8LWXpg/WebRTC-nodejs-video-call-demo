@@ -1,6 +1,8 @@
 /** @type {RTCPeerConnection} */
 let yourConn;
+let candidateQueue = [];
 
+let localUser;
 let connectedUser;
 
 const peerConnectionConfig = {
@@ -40,12 +42,12 @@ function loginClick(self) {
  * @param {'m'|'s'} mediaType
  */
 function share(mediaType) {
-	const name = usernameInput.value;
-	showUsername.innerHTML = name;
-	if (name.length > 0) {
+	localUser = usernameInput.value;
+	showUsername.innerHTML = localUser;
+	if (localUser.length > 0) {
 		send({
 			type: 'login',
-			name: name,
+			name: localUser,
 			share: mediaType,
 		});
 	}
@@ -97,11 +99,16 @@ function getUserMediaSuccess(stream) {
 		if (event.candidate) {
 			send({
 				type: 'candidate',
+				name: connectedUser,
 				candidate: event.candidate,
 			});
 		}
 	};
-	yourConn.ontrack = gotRemoteStream;
+	yourConn.ontrack = (event) => {
+		console.log('got remote stream');
+		showRemoteUsername.innerHTML = connectedUser;
+		remoteVideo.srcObject = event.streams[0];
+	};
 	yourConn.addStream(localStream);
 }
 
@@ -115,19 +122,15 @@ function callBtnClick() {
 
 	if (callToUsername.length > 0) {
 		connectedUser = callToUsername;
-		console.log('nameToCall', connectedUser);
-		console.log('create an offer to-', connectedUser);
-
-		const connectionState2 = yourConn.connectionState;
-		console.log('connection state before call beginning', connectionState2);
-		const signallingState2 = yourConn.signalingState;
-		//console.log('connection state after',connectionState1)
-		console.log('signalling state after', signallingState2);
+		console.log('create an offer to ', callToUsername);
+		console.log('connection state', yourConn.connectionState);
+		console.log('signalling state', yourConn.signalingState);
 		yourConn
 			.createOffer()
 			.then(async (offer) => {
 				send({
 					type: 'offer',
+					name: connectedUser,
 					offer: offer,
 				});
 
@@ -178,49 +181,8 @@ function gotMessageFromServer(message) {
 }
 
 function send(msg) {
-	//attach the other peer username to our messages
-	if (connectedUser) {
-		msg.name = connectedUser;
-	}
-	console.log('msg before sending to server', msg);
+	console.log('msg sended to server:\n', msg);
 	serverConnection.send(JSON.stringify(msg));
-}
-
-/* START: Create an answer for an offer i.e. send message to server */
-function handleOffer(offer, name) {
-	callInitiator.style.display = 'none';
-	callReceiver.style.display = 'block';
-
-	/* Call answer functionality starts */
-	answerBtn.addEventListener('click', () => {
-		connectedUser = name;
-		yourConn.setRemoteDescription(new RTCSessionDescription(offer));
-
-		// Create an answer to an offer
-		yourConn
-			.createAnswer()
-			.then(async (answer) => {
-				await yourConn.setLocalDescription(answer).then(() => {
-					send({
-						type: 'answer',
-						answer: answer,
-					});
-				});
-				callReceiver.style.display = 'none';
-				callOngoing.style.display = 'block';
-			})
-			.catch((error) => {
-				alert('Error when creating an answer: ' + error);
-			});
-	});
-	/* Call answer functionality ends */
-	/* Call decline functionality starts */
-	declineBtn.addEventListener('click', () => {
-		callInitiator.style.display = 'block';
-		callReceiver.style.display = 'none';
-	});
-
-	/*Call decline functionality ends */
 }
 
 function gotRemoteStream(event) {
@@ -230,24 +192,88 @@ function gotRemoteStream(event) {
 }
 
 function errorHandler(error) {
-	console.log(error);
+	console.error(error);
+}
+
+// create an answer for an offer
+function handleOffer(offer, name) {
+	callInitiator.style.display = 'none';
+	callReceiver.style.display = 'block';
+
+	// Remove existing event listeners
+	answerBtn.removeEventListener('click', handleAnswerClick);
+	declineBtn.removeEventListener('click', handleDeclineClick);
+
+	// Define the event handler functions
+	function handleAnswerClick() {
+		connectedUser = name;
+		yourConn
+			.setRemoteDescription(new RTCSessionDescription(offer))
+			.then(() => {
+				while (candidateQueue.length) {
+					const candidate = candidateQueue.shift();
+					yourConn.addIceCandidate(new RTCIceCandidate(candidate)).catch(errorHandler);
+				}
+			})
+			.catch(errorHandler);
+
+		// Create an answer to an offer
+		yourConn
+			.createAnswer()
+			.then(async (answer) => {
+				await yourConn.setLocalDescription(answer).then(() => {
+					send({
+						type: 'answer',
+						name: connectedUser,
+						answer: answer,
+					});
+				});
+				callReceiver.style.display = 'none';
+				callOngoing.style.display = 'block';
+			})
+			.catch((error) => {
+				alert('Error when creating an answer: ' + error);
+			});
+	}
+
+	function handleDeclineClick() {
+		callInitiator.style.display = 'block';
+		callReceiver.style.display = 'none';
+	}
+
+	// Add new event listeners
+	answerBtn.addEventListener('click', handleAnswerClick);
+	declineBtn.addEventListener('click', handleDeclineClick);
 }
 
 //when we got an answer from a remote user
 function handleAnswer(answer) {
 	console.log('answer: ', answer);
-	yourConn.setRemoteDescription(new RTCSessionDescription(answer));
+	yourConn
+		.setRemoteDescription(new RTCSessionDescription(answer))
+		.then(() => {
+			while (candidateQueue.length) {
+				const candidate = candidateQueue.shift();
+				yourConn.addIceCandidate(new RTCIceCandidate(candidate)).catch(errorHandler);
+			}
+		})
+		.catch(errorHandler);
 }
 
 //when we got an ice candidate from a remote user
 function handleCandidate(candidate) {
-	yourConn.addIceCandidate(new RTCIceCandidate(candidate));
+	if (yourConn.remoteDescription) {
+		yourConn.addIceCandidate(new RTCIceCandidate(candidate)).catch(errorHandler);
+	} else {
+		candidateQueue.push(candidate);
+	}
 }
 
 //hang up
 function hangUp() {
 	send({
 		type: 'leave',
+		name: localUser,
 	});
 
 	handleLeave();
@@ -261,14 +287,10 @@ function handleLeave() {
 	remoteVideo.src = null;
 	remoteVideo.hidden = true;
 	showRemoteUsername.innerHTML = '';
-	const connectionState = yourConn.connectionState;
-	const signallingState = yourConn.signalingState;
-	console.log('connection state before', connectionState);
-	console.log('signalling state before', signallingState);
+	console.log('connection state before', yourConn.connectionState);
+	console.log('signalling state before', yourConn.signalingState);
 	yourConn.close();
 	yourConn.onicecandidate = null;
-	const connectionState1 = yourConn.connectionState;
-	const signallingState1 = yourConn.signalingState;
-	console.log('connection state after', connectionState1);
-	console.log('signalling state after', signallingState1);
+	console.log('connection state after', yourConn.connectionState);
+	console.log('signalling state after', yourConn.signalingState);
 }
