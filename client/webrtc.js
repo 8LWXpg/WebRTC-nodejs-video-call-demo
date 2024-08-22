@@ -34,9 +34,14 @@ const callReceiver = document.getElementById('callReceiver');
  * @param {HTMLInputElement} self
  */
 function loginClick(self) {
-	self.outerHTML = /* html */ `
+	if (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+		self.outerHTML = /* html */ `
+		<button class="primary" onclick="share('m')">Share Media</button>`;
+	} else {
+		self.outerHTML = /* html */ `
 		<button class="primary" onclick="share('m')">Share Media</button>
 		<button class="primary" onclick="share('s')">Share Screen</button>`;
+	}
 }
 
 /**
