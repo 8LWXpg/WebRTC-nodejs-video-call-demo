@@ -99,6 +99,8 @@ wss.on('connection', (ws) => {
 						share: data.share,
 						allUsers: Array.from(allUsers),
 					});
+
+					notifyUsersChange(data.name);
 				}
 				break;
 			}
@@ -162,19 +164,19 @@ wss.on('connection', (ws) => {
 				}
 				break;
 			}
-			case 'leave': {
-				console.log('Disconnecting from', data.name);
-				const conn = users[data.name];
-				allUsers.delete(data.name);
+			// case 'leave': {
+			// 	console.log('Disconnecting from', data.name);
+			// 	const conn = users[data.name];
+			// 	allUsers.delete(data.name);
 
-				// Notify the other user so he can disconnect his peer connection
-				if (conn !== undefined) {
-					sendTo(conn, {
-						type: 'leave',
-					});
-				}
-				break;
-			}
+			// 	// Notify the other user so he can disconnect his peer connection
+			// 	if (conn !== undefined) {
+			// 		sendTo(conn, {
+			// 			type: 'leave',
+			// 		});
+			// 	}
+			// 	break;
+			// }
 			case 'hangup': {
 				console.log('Hanging up call from', data.name);
 				const conn = users[users[data.name]?.otherName];
@@ -198,17 +200,21 @@ wss.on('connection', (ws) => {
 	ws.on('close', () => {
 		if (ws.name) {
 			delete users[ws.name];
+			allUsers.delete(ws.name);
 
 			if (ws.otherName) {
 				console.log('Disconnecting from ', ws.otherName);
 				const conn = users[ws.otherName];
 
+				// Notify the other user so he can disconnect his peer connection
 				if (conn !== undefined) {
 					sendTo(conn, {
 						type: 'leave',
 					});
 				}
 			}
+
+			notifyUsersChange(ws.name);
 		}
 	});
 });
@@ -220,6 +226,17 @@ wss.on('connection', (ws) => {
  */
 function sendTo(connection, message) {
 	connection.send(JSON.stringify(message));
+}
+
+function notifyUsersChange(newUser) {
+	for (const user of allUsers) {
+		if (user !== newUser) {
+			sendTo(users[user], {
+				type: 'users',
+				users: Array.from(allUsers),
+			});
+		}
+	}
 }
 
 console.log(`Server running. Visit https://localhost:${HTTPS_PORT}

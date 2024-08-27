@@ -128,6 +128,9 @@ function gotMessageFromServer(message) {
 		case 'hangup':
 			handelHangUp();
 			break;
+		case 'users':
+			refreshUserList(data.users);
+			break;
 		default:
 			break;
 	}
@@ -192,33 +195,32 @@ function share(mediaType) {
 /**
  * Register user for first time i.e. Prepare ground for WebRTC call to happen
  * @param {boolean} success
- * @param {Array[string]} allUsers
+ * @param {string[]} allUsers
  * @param {'m'|'s'} share
  */
 function handleLogin(success, allUsers, share) {
 	if (success === false) {
 		alert('Oops...try a different username');
-	} else {
-		const allAvailableUsers = allUsers.join(', ');
-		console.log('All available users', allAvailableUsers);
-		showAllUsers.innerHTML = 'Available users: ' + allAvailableUsers;
-		document.getElementById('myName').hidden = true;
-		document.getElementById('otherElements').hidden = false;
+		return;
+	}
 
-		switch (share) {
-			case 'm':
-				navigator.mediaDevices
-					.getUserMedia({
-						video: true,
-						audio: true,
-					})
-					.then(getUserMediaSuccess)
-					.catch(errorHandler);
-				break;
-			case 's':
-				navigator.mediaDevices.getDisplayMedia().then(getUserMediaSuccess).catch(errorHandler);
-				break;
-		}
+	refreshUserList(allUsers);
+	document.getElementById('myName').hidden = true;
+	document.getElementById('otherElements').hidden = false;
+
+	switch (share) {
+		case 'm':
+			navigator.mediaDevices
+				.getUserMedia({
+					video: true,
+					audio: true,
+				})
+				.then(getUserMediaSuccess)
+				.catch(errorHandler);
+			break;
+		case 's':
+			navigator.mediaDevices.getDisplayMedia().then(getUserMediaSuccess).catch(errorHandler);
+			break;
 	}
 }
 
@@ -321,4 +323,13 @@ function handelHangUp() {
 	callOngoing.style.display = 'none';
 	callInitiator.style.display = 'block';
 	yourConn.onicecandidate = null;
+}
+
+/**
+ * @param {string[]} users
+ */
+function refreshUserList(users) {
+	const allAvailableUsers = users.join(', ');
+	console.log('All available users', allAvailableUsers);
+	showAllUsers.innerHTML = 'Available users: ' + allAvailableUsers;
 }
