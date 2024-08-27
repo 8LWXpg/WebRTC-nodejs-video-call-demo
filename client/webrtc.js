@@ -3,6 +3,7 @@ let yourConn;
 let candidateQueue = [];
 
 let localUser;
+let localStream;
 let connectedUser;
 
 const peerConnectionConfig = {
@@ -140,6 +141,7 @@ function gotMessageFromServer(message) {
 
 // #region utility functions
 function getUserMediaSuccess(stream) {
+	localStream = stream;
 	localVideo.srcObject = stream;
 	yourConn = new RTCPeerConnection(peerConnectionConfig);
 
@@ -249,13 +251,12 @@ function handleOffer(offer, name) {
 		// Create an answer to an offer
 		yourConn
 			.createAnswer()
-			.then((answer) => {
-				yourConn.setLocalDescription(answer).then(() => {
-					send({
-						type: 'answer',
-						name: connectedUser,
-						answer: answer,
-					});
+			.then((answer) => yourConn.setLocalDescription(answer))
+			.then(() => {
+				send({
+					type: 'answer',
+					name: connectedUser,
+					answer: yourConn.localDescription,
 				});
 				callReceiver.style.display = 'none';
 				callOngoing.style.display = 'block';
@@ -322,7 +323,12 @@ function handelHangUp() {
 
 	callOngoing.style.display = 'none';
 	callInitiator.style.display = 'block';
-	yourConn.onicecandidate = null;
+
+	yourConn.close();
+
+	// Reset the connection
+	yourConn = new RTCPeerConnection(peerConnectionConfig);
+	setupConnection(localStream);
 }
 
 /**
