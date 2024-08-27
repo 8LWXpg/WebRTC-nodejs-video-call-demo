@@ -92,10 +92,7 @@ function hangUpClick() {
 }
 
 window.addEventListener('beforeunload', () => {
-	send({
-		type: 'leave',
-		name: localUser,
-	});
+	serverConnection.close();
 });
 // #endregion
 
@@ -313,7 +310,6 @@ function handleCandidate(candidate) {
 /** Handle peer leaves */
 function handleLeave() {
 	handelHangUp();
-	yourConn.close();
 }
 
 function handelHangUp() {
