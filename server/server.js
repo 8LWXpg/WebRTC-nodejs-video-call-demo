@@ -119,8 +119,8 @@ wss.on('connection', (ws) => {
 					});
 				} else {
 					sendTo(ws, {
-						type: 'error',
-						message: 'User not found',
+						type: 'decline',
+						message: 'No such user',
 					});
 				}
 				break;
@@ -146,7 +146,7 @@ wss.on('connection', (ws) => {
 				const conn = users[data.name];
 				sendTo(conn, {
 					type: 'decline',
-					name: ws.name,
+					message: `Declined by user: ${ws.name}`,
 				});
 				break;
 			}

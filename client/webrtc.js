@@ -119,7 +119,7 @@ function gotMessageFromServer(message) {
 			handleAnswer(data.answer);
 			break;
 		case 'decline':
-			handleDecline();
+			handleDecline(data.message);
 			break;
 		//when a remote peer sends an ice candidate to us
 		case 'candidate':
@@ -130,9 +130,6 @@ function gotMessageFromServer(message) {
 			break;
 		case 'hangup':
 			handelHangUp();
-			break;
-		case 'error':
-			alert(data.message);
 			break;
 		default:
 			break;
@@ -297,10 +294,11 @@ function handleAnswer(answer) {
 		.catch(errorHandler);
 }
 
-function handleDecline() {
+function handleDecline(message) {
 	callInitiator.style.display = 'block';
 	callReceiver.style.display = 'none';
 	callOngoing.style.display = 'none';
+	alert(message);
 }
 
 //when we got an ice candidate from a remote user
