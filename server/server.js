@@ -164,19 +164,6 @@ wss.on('connection', (ws) => {
 				}
 				break;
 			}
-			// case 'leave': {
-			// 	console.log('Disconnecting from', data.name);
-			// 	const conn = users[data.name];
-			// 	allUsers.delete(data.name);
-
-			// 	// Notify the other user so he can disconnect his peer connection
-			// 	if (conn !== undefined) {
-			// 		sendTo(conn, {
-			// 			type: 'leave',
-			// 		});
-			// 	}
-			// 	break;
-			// }
 			case 'hangup': {
 				console.log('Hanging up call from', data.name);
 				const conn = users[users[data.name]?.otherName];

@@ -83,13 +83,7 @@ function hangUpClick() {
 		name: localUser,
 	});
 
-	connectedUser = null;
-	remoteVideo.src = null;
-	remoteVideo.hidden = true;
-	showRemoteUsername.innerHTML = '';
-
-	callOngoing.style.display = 'none';
-	callInitiator.style.display = 'block';
+	handelHangUp();
 }
 
 window.addEventListener('beforeunload', () => {
@@ -165,6 +159,7 @@ function setupConnection(stream) {
 		console.log('got remote stream');
 		showRemoteUsername.innerHTML = connectedUser;
 		remoteVideo.srcObject = event.streams[0];
+		remoteVideo.hidden = false;
 	};
 	yourConn.addStream(stream);
 }
