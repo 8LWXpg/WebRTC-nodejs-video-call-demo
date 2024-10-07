@@ -1,6 +1,6 @@
 # WebRTC nodejs video call demo
 
-based on [sauravkp/WebRTC-nodejs-video-call-demo](https://github.com/sauravkp/WebRTC-nodejs-video-call-demo)
+Simple AF WebRTC video call demo in nodejs
 
 ## Usage
 
