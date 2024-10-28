@@ -2,6 +2,7 @@
   "name": "webrtc-signalling-server",
   "version": "1.0.0",
   "description": "An as simple as it gets WebRTC example with signalling server",
+  "type": "module",
   "scripts": {
     "start": "node server/server.js"
   },

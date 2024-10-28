@@ -1,8 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
-const WebSocket = require('ws');
-const WebSocketServer = WebSocket.Server;
+import { readFile, readFileSync } from 'fs';
+import { extname } from 'path';
+import { createServer } from 'https';
+import WebSocket, { WebSocketServer } from 'ws';
 
 const HTTPS_PORT = 8443;
 
@@ -18,7 +17,7 @@ function handleRequest(request, response) {
 	console.log('request received: ' + request.url);
 
 	let filePath = request.url === '/' ? 'client/index.html' : `client${request.url}`;
-	const extName = path.extname(filePath);
+	const extName = extname(filePath);
 	let contentType = 'text/html';
 	switch (extName) {
 		case '.js':
@@ -29,7 +28,7 @@ function handleRequest(request, response) {
 			break;
 	}
 
-	fs.readFile(filePath, (error, content) => {
+	readFile(filePath, (error, content) => {
 		if (error) {
 			if (error.code === 'ENOENT') {
 				// File not found
@@ -48,10 +47,10 @@ function handleRequest(request, response) {
 	});
 }
 
-const httpsServer = https.createServer(
+const httpsServer = createServer(
 	{
-		key: fs.readFileSync('key.pem'),
-		cert: fs.readFileSync('cert.pem'),
+		key: readFileSync('key.pem'),
+		cert: readFileSync('cert.pem'),
 	},
 	handleRequest
 );
