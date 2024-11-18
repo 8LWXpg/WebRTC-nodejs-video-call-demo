@@ -17,6 +17,7 @@
   "license": "MIT",
   "homepage": "https://github.com/8LWXpg/WebRTC-nodejs-video-call-demo",
   "dependencies": {
+    "express": "^4.21.1",
     "ws": "^8.18.0"
   }
 }

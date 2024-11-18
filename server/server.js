@@ -1,65 +1,29 @@
-import { readFile, readFileSync } from 'fs';
-import { extname } from 'path';
+import { readFileSync } from 'fs';
 import { createServer } from 'https';
 import WebSocket, { WebSocketServer } from 'ws';
+import express from 'express';
 
+const app = express();
 const HTTPS_PORT = 8443;
+app.use(express.static('client'));
+
+const server = createServer(
+	{
+		key: readFileSync('key.pem'),
+		cert: readFileSync('cert.pem'),
+	},
+	app
+);
+server.listen(HTTPS_PORT, '0.0.0.0');
+
+// Create a server for handling websocket calls
+const wss = new WebSocketServer({ server: server });
 
 /**
  * @type {Map<string, WebSocket>}
  */
 const users = new Map();
 const allUsers = new Set();
-
-// Serve web page based on file path, without using Express
-function handleRequest(request, response) {
-	// Render the single client html file for any request the HTTP server receives
-	console.log('request received: ' + request.url);
-
-	let filePath = request.url === '/' ? 'client/index.html' : `client${request.url}`;
-	const extName = extname(filePath);
-	let contentType = 'text/html';
-	switch (extName) {
-		case '.js':
-			contentType = 'application/javascript';
-			break;
-		case '.css':
-			contentType = 'text/css';
-			break;
-	}
-
-	readFile(filePath, (error, content) => {
-		if (error) {
-			if (error.code === 'ENOENT') {
-				// File not found
-				response.writeHead(404, { 'Content-Type': 'text/html' });
-				response.end('<h1>404 Not Found</h1>', 'utf-8');
-			} else {
-				// Some server error
-				response.writeHead(500);
-				response.end(`Server Error: ${error.code}`);
-			}
-		} else {
-			// Serve the file
-			response.writeHead(200, { 'Content-Type': contentType });
-			response.end(content, 'utf-8');
-		}
-	});
-}
-
-const httpsServer = createServer(
-	{
-		key: readFileSync('key.pem'),
-		cert: readFileSync('cert.pem'),
-	},
-	handleRequest
-);
-httpsServer.listen(HTTPS_PORT, '0.0.0.0');
-
-// ----------------------------------------------------------------------------------------
-
-// Create a server for handling websocket calls
-const wss = new WebSocketServer({ server: httpsServer });
 
 wss.on('connection', (ws) => {
 	ws.on('message', (message) => {
