@@ -19,38 +19,27 @@ server.listen(HTTPS_PORT, '0.0.0.0');
 // Create a server for handling websocket calls
 const wss = new WebSocketServer({ server: server });
 
-/**
- * @type {Map<string, WebSocket>}
- */
+/** @type {Map<string, WebSocket>} */
 const users = new Map();
+/** @type {Set<string>} */
 const allUsers = new Set();
 
 wss.on('connection', (ws) => {
 	ws.on('message', (message) => {
-		/** @type {{name :string}} */
-		let data;
+		/** @type {{name :string, type: string}} */
+		let data = JSON.parse(message);
+		console.log(data);
 
-		//accepting only JSON messages
-		try {
-			data = JSON.parse(message);
-		} catch (e) {
-			console.log('Invalid JSON');
-			data = {};
-		}
-
-		console.log('received data:', data);
-		//switching type of the user message
+		// switching type of the user message
 		switch (data.type) {
-			//when a user tries to login
+			// register user
 			case 'login': {
-				console.log('User logged', data.name);
 				if (users[data.name]) {
 					sendTo(ws, {
 						type: 'login',
 						success: false,
 					});
 				} else {
-					console.log('save user connection on the server');
 					users[data.name] = ws;
 					allUsers.add(data.name);
 
@@ -67,14 +56,12 @@ wss.on('connection', (ws) => {
 				}
 				break;
 			}
+			// calling different user
 			case 'offer': {
-				// Calling different user
-				console.log('Sending offer to: ', data.name);
-
 				const conn = users[data.name];
 
 				if (conn !== undefined) {
-					//setting that UserA connected with UserB
+					// pass offer to other user
 					ws.otherName = data.name;
 
 					sendTo(conn, {
@@ -90,11 +77,9 @@ wss.on('connection', (ws) => {
 				}
 				break;
 			}
+			// answering to the offer
 			case 'answer': {
-				// Answering to the offer
-				console.log('Sending answer to: ', data.name);
 				const conn = users[data.name];
-				console.log('answer: ', data.answer);
 
 				if (conn !== undefined) {
 					ws.otherName = data.name;
@@ -105,9 +90,8 @@ wss.on('connection', (ws) => {
 				}
 				break;
 			}
+			// declining the offer
 			case 'decline': {
-				// Declining the offer
-				console.log('Declining call from: ', data.name);
 				const conn = users[data.name];
 				sendTo(conn, {
 					type: 'decline',
@@ -116,7 +100,6 @@ wss.on('connection', (ws) => {
 				break;
 			}
 			case 'candidate': {
-				console.log('Sending candidate to:', data.name);
 				const conn = users[data.name];
 
 				if (conn !== undefined) {
@@ -128,7 +111,6 @@ wss.on('connection', (ws) => {
 				break;
 			}
 			case 'hangup': {
-				console.log('Hanging up call from', data.name);
 				const conn = users[users[data.name]?.otherName];
 
 				if (conn !== undefined) {
@@ -139,10 +121,8 @@ wss.on('connection', (ws) => {
 				break;
 			}
 			default: {
-				sendTo(ws, {
-					type: 'error',
-					message: 'Command not found: ' + data.type,
-				});
+				console.log('Command not found: ', data.type);
+				break;
 			}
 		}
 	});
@@ -159,7 +139,7 @@ wss.on('connection', (ws) => {
 				// Notify the other user so he can disconnect his peer connection
 				if (conn !== undefined) {
 					sendTo(conn, {
-						type: 'leave',
+						type: 'hangup',
 					});
 				}
 			}
@@ -179,14 +159,14 @@ function sendTo(connection, message) {
 }
 
 function notifyUsersChange(newUser) {
-	for (const user of allUsers) {
+	allUsers.forEach((user) => {
 		if (user !== newUser) {
 			sendTo(users[user], {
 				type: 'users',
 				users: Array.from(allUsers),
 			});
 		}
-	}
+	});
 }
 
 console.log(`Server running. Visit https://localhost:${HTTPS_PORT}

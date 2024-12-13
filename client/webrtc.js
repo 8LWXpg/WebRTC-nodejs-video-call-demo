@@ -48,33 +48,23 @@ function loginClick(self) {
 /**
  * Initiate call to any user i.e. send message to server
  */
-function callBtnClick() {
+async function callBtnClick() {
 	const callToUsername = callToUsernameInput.value;
 
-	if (callToUsername.length > 0) {
-		connectedUser = callToUsername;
-		console.log('create an offer to ', callToUsername);
-		console.log('connection state', yourConn.connectionState);
-		console.log('signalling state', yourConn.signalingState);
-		yourConn
-			.createOffer()
-			.then((offer) => {
-				yourConn.setLocalDescription(offer).then(
-					send({
-						type: 'offer',
-						name: connectedUser,
-						offer: offer,
-					})
-				);
+	connectedUser = callToUsername;
+	console.log('create an offer to ', callToUsername);
+	console.log('connection state', yourConn.connectionState);
+	console.log('signalling state', yourConn.signalingState);
+	const offer = await yourConn.createOffer();
+	await yourConn.setLocalDescription(offer);
+	send({
+		type: 'offer',
+		name: connectedUser,
+		offer: offer,
+	});
 
-				callOngoing.style.display = 'block';
-				callInitiator.style.display = 'none';
-			})
-			.catch((error) => {
-				alert('Error when creating an offer', error);
-				console.error('Error when creating an offer', error);
-			});
-	} else alert("username can't be blank!");
+	callOngoing.style.display = 'block';
+	callInitiator.style.display = 'none';
 }
 
 function hangUpClick() {
@@ -117,9 +107,6 @@ function gotMessageFromServer(message) {
 		case 'candidate':
 			handleCandidate(data.candidate);
 			break;
-		case 'leave':
-			handleLeave();
-			break;
 		case 'hangup':
 			handelHangUp();
 			break;
@@ -129,21 +116,9 @@ function gotMessageFromServer(message) {
 		default:
 			break;
 	}
-
-	serverConnection.onerror = errorHandler;
 }
 
 // #region utility functions
-function getUserMediaSuccess(stream) {
-	localStream = stream;
-	localVideo.srcObject = stream;
-	yourConn = new RTCPeerConnection(peerConnectionConfig);
-
-	console.log('connection state inside getusermedia', yourConn.connectionState);
-
-	setupConnection(stream);
-}
-
 function setupConnection(stream) {
 	yourConn.onicecandidate = (event) => {
 		console.log('onicecandidate: ', event.candidate);
@@ -162,10 +137,6 @@ function setupConnection(stream) {
 		remoteVideo.hidden = false;
 	};
 	yourConn.addStream(stream);
-}
-
-function errorHandler(error) {
-	console.error(error);
 }
 
 function send(msg) {
@@ -195,7 +166,7 @@ function share(mediaType) {
  * @param {string[]} allUsers
  * @param {'m'|'s'} share
  */
-function handleLogin(success, allUsers, share) {
+async function handleLogin(success, allUsers, share) {
 	if (success === false) {
 		alert('Oops...try a different username');
 		return;
@@ -205,20 +176,25 @@ function handleLogin(success, allUsers, share) {
 	document.getElementById('myName').hidden = true;
 	document.getElementById('otherElements').hidden = false;
 
+	/** @type {MediaStream} */
+	let stream;
 	switch (share) {
 		case 'm':
-			navigator.mediaDevices
-				.getUserMedia({
-					video: true,
-					audio: true,
-				})
-				.then(getUserMediaSuccess)
-				.catch(errorHandler);
+			stream = await navigator.mediaDevices.getUserMedia({
+				video: true,
+				audio: true,
+			});
 			break;
 		case 's':
-			navigator.mediaDevices.getDisplayMedia().then(getUserMediaSuccess).catch(errorHandler);
+			stream = await navigator.mediaDevices.getDisplayMedia();
 			break;
 	}
+
+	localStream = stream;
+	localVideo.srcObject = stream;
+	yourConn = new RTCPeerConnection(peerConnectionConfig);
+
+	setupConnection(stream);
 }
 
 // create an answer for an offer
@@ -231,34 +207,24 @@ function handleOffer(offer, name) {
 	declineBtn.removeEventListener('click', handleDeclineClick);
 
 	// Define the event handler functions
-	function handleAnswerClick() {
+	async function handleAnswerClick() {
 		connectedUser = name;
-		yourConn
-			.setRemoteDescription(new RTCSessionDescription(offer))
-			.then(() => {
-				while (candidateQueue.length) {
-					const candidate = candidateQueue.shift();
-					yourConn.addIceCandidate(new RTCIceCandidate(candidate)).catch(errorHandler);
-				}
-			})
-			.catch(errorHandler);
+		await yourConn.setRemoteDescription(new RTCSessionDescription(offer));
+		while (candidateQueue.length) {
+			const candidate = candidateQueue.shift();
+			await yourConn.addIceCandidate(new RTCIceCandidate(candidate));
+		}
 
 		// Create an answer to an offer
-		yourConn
-			.createAnswer()
-			.then((answer) => yourConn.setLocalDescription(answer))
-			.then(() => {
-				send({
-					type: 'answer',
-					name: connectedUser,
-					answer: yourConn.localDescription,
-				});
-				callReceiver.style.display = 'none';
-				callOngoing.style.display = 'block';
-			})
-			.catch((error) => {
-				alert('Error when creating an answer: ' + error);
-			});
+		const answer = await yourConn.createAnswer();
+		await yourConn.setLocalDescription(answer);
+		send({
+			type: 'answer',
+			name: connectedUser,
+			answer: yourConn.localDescription,
+		});
+		callReceiver.style.display = 'none';
+		callOngoing.style.display = 'block';
 	}
 
 	function handleDeclineClick() {
@@ -276,17 +242,13 @@ function handleOffer(offer, name) {
 }
 
 // When got an answer from a remote user
-function handleAnswer(answer) {
+async function handleAnswer(answer) {
 	console.log('answer: ', answer);
-	yourConn
-		.setRemoteDescription(new RTCSessionDescription(answer))
-		.then(() => {
-			while (candidateQueue.length) {
-				const candidate = candidateQueue.shift();
-				yourConn.addIceCandidate(new RTCIceCandidate(candidate)).catch(errorHandler);
-			}
-		})
-		.catch(errorHandler);
+	await yourConn.setRemoteDescription(new RTCSessionDescription(answer));
+	while (candidateQueue.length) {
+		const candidate = candidateQueue.shift();
+		await yourConn.addIceCandidate(new RTCIceCandidate(candidate));
+	}
 }
 
 function handleDecline(message) {
@@ -303,11 +265,6 @@ function handleCandidate(candidate) {
 	} else {
 		candidateQueue.push(candidate);
 	}
-}
-
-/** Handle peer leaves */
-function handleLeave() {
-	handelHangUp();
 }
 
 function handelHangUp() {
