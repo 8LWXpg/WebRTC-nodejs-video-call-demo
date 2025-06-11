@@ -28,8 +28,4 @@ npm install
 npm start
 ```
 
-With the server running, open a recent version of Firefox, Chrome, or Safari and visit `https://localhost:8443`.
-
-## TLS
-
-Recent versions of Chrome require secure websockets for WebRTC. Thus, this example utilizes HTTPS. Included is a self-signed certificate that must be accepted in the browser for the example to work.
+With the server running, visit `https://localhost:8443`.
