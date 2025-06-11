@@ -169,9 +169,4 @@ function notifyUsersChange(newUser) {
 	});
 }
 
-console.log(`Server running. Visit https://localhost:${HTTPS_PORT}
-
-Some important notes:
-* Note the HTTPS; there is no HTTP -> HTTPS redirect.
-* You'll also need to accept the invalid TLS certificate.
-* Some browsers or OSs may not allow the webcam to be used by multiple pages at once. You may need to use two different browsers or machines.\n`);
+console.log(`Server running on https://localhost:${HTTPS_PORT}`);

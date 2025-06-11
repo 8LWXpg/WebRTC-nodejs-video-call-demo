@@ -1,7 +1,6 @@
 {
     "recommendations": [
         "esbenp.prettier-vscode",
-        "pushqrdx.inline-html",
-        "streetsidesoftware.code-spell-checker"
+        "pushqrdx.inline-html"
     ]
 }

@@ -1,11 +1,8 @@
 {
-  "name": "webrtc-signalling-server",
+  "name": "webrtc-nodejs-video-call-demo",
   "version": "1.0.0",
-  "description": "An as simple as it gets WebRTC example with signalling server",
+  "description": "Simple AF WebRTC video call demo in nodejs ",
   "type": "module",
-  "scripts": {
-    "start": "node server/server.js"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/8LWXpg/WebRTC-nodejs-video-call-demo"
@@ -16,8 +13,12 @@
   "author": "8LWXpg",
   "license": "MIT",
   "homepage": "https://github.com/8LWXpg/WebRTC-nodejs-video-call-demo",
+  "scripts": {
+    "start": "node server/server.js",
+    "watch": "node --watch server/server.js"
+  },
   "dependencies": {
-    "express": "^4.21.1",
-    "ws": "^8.18.0"
+    "express": "^5.1.0",
+    "ws": "^8.18.2"
   }
 }
