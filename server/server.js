@@ -169,4 +169,4 @@ function notifyUsersChange(newUser) {
 	});
 }
 
-console.log(`Server running on https://localhost:${HTTPS_PORT}`);
+console.log(`Server running on https://0.0.0.0:${HTTPS_PORT}`);
